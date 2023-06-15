@@ -21,7 +21,7 @@ A useful tool for managing token allowances is Revoke.cash. This service allows 
 
 ## Contract Deployment
 For those interested in the technical specifics of the Subscription Contract or those who wish to inspect the contract for security reasons, you can view the deployed contract here:
-- Sepolia: [Contract](https://sepolia.etherscan.io/address/0x13c0b00a0bef323940fd7008925f39020bb85dc4)
+- Sepolia: [0x13c0B00a0beF323940Fd7008925F39020bB85dC4](https://sepolia.etherscan.io/address/0x13c0b00a0bef323940fd7008925f39020bb85dc4)
 
 Please note that interacting directly with the contract should only be done by experienced users. Always ensure you understand the implications of any transactions you're signing on the blockchain.
 
