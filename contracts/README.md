@@ -15,9 +15,9 @@ This model offers users complete control over their funds and aligns with the bl
 4. **Security**: The Subscription Contract abides by strict security protocols. All transactions are secured by the Ethereum network, and user signatures are required for each billing cycle.
 
 ## Control Over Token Allowances
-Even after subscribing, users retain full control over their token allowances. This means they can decide to increase, decrease, or terminate their subscription at any time.
+Even after subscribing, users retain full control over their token allowances. This means they can decide to increase or decrease their allowance and terminate their subscription at any time.
 
-A useful tool for managing token allowances is Revoke.cash. This service allows you to review and adjust the allowances you've set for various decentralized applications (DApps).
+A useful tool for managing token allowances is [revoke.cash](https://revoke.cash/). This service allows you to review and adjust the allowances you've set for various decentralized applications (DApps).
 
 ## Contract Deployment
 For those interested in the technical specifics of the Subscription Contract or those who wish to inspect the contract for security reasons, you can view the deployed contract here:
@@ -25,4 +25,4 @@ For those interested in the technical specifics of the Subscription Contract or 
 
 Please note that interacting directly with the contract should only be done by experienced users. Always ensure you understand the implications of any transactions you're signing on the blockchain.
 
-For more information or questions about the Subscription Contract, feel free to reach out or open an issue in this repository.
+For more information or questions about the Subscription Contract, feel free to reach out to team@rapids.finance or open an issue in this repository.
