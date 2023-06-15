@@ -14,7 +14,7 @@ This model offers users complete control over their funds and aligns with the bl
 3. **Billing Cycle**: The Subscription Contract cannot charge users arbitrarily. It can only process the transaction after the end of the specified billing period.
 4. **Security**: The Subscription Contract abides by strict security protocols. All transactions are secured by the Ethereum network, and user signatures are required for each billing cycle.
 
-## Control Over Token Allowances
+## Control Over Token Allowances and Subscription
 Even after subscribing, users retain full control over their token allowances. This means they can decide to increase or decrease their allowance and terminate their subscription at any time.
 
 A useful tool for managing token allowances is [revoke.cash](https://revoke.cash/). This service allows you to review and adjust the allowances you've set for various decentralized applications (DApps).
