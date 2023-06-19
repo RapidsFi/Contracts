@@ -10,5 +10,6 @@ npx hardhat test
 REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.js --network sepolia (then update all whitelisted addresses in lambda)
+npx hardhat run scripts/upgrade.js --network sepolia
 npx hardhat test --network sepolia
 ```

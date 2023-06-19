@@ -1,15 +1,14 @@
-// SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract Subscription is EIP712, Ownable {
+contract Subscription is Initializable, EIP712Upgradeable, OwnableUpgradeable {
     using ECDSA for bytes32;
     using SafeMath for uint256;
 
@@ -33,9 +32,13 @@ contract Subscription is EIP712, Ownable {
         uint256 nonce
     );
 
-    uint256 public gracePeriodSeconds = 300;
+    uint256 public gracePeriodSeconds;
 
-    constructor() EIP712("Subscription", "1") {}
+    function initialize() public initializer {
+        __EIP712_init("Subscription", "1");
+        __Ownable_init();
+        gracePeriodSeconds = 300;
+    }
 
     function isSubscriptionActive(
         bytes32 subscriptionHash
@@ -73,6 +76,31 @@ contract Subscription is EIP712, Ownable {
         )));
     }
 
+    function getSubscriptionCancelHash(
+        address from,
+        address toAddress,
+        address tokenAddress,
+        uint256 tokenAmount,
+        uint256 periodSeconds,
+        uint256 nonce,
+        bool confirm
+    )
+        public
+        view
+        returns (bytes32)
+    {
+        return _hashTypedDataV4(keccak256(abi.encode(
+            keccak256("Subscription(address from,address toAddress,address tokenAddress,uint256 tokenAmount,uint256 periodSeconds,uint256 nonce,bool confirm)"),
+            from,
+            toAddress,
+            tokenAddress,
+            tokenAmount,
+            periodSeconds,
+            nonce,
+            confirm
+        )));
+    }
+
     function getSubscriptionSigner(
         bytes32 subscriptionHash,
         bytes memory signature
@@ -82,35 +110,6 @@ contract Subscription is EIP712, Ownable {
         returns (address)
     {
         return ECDSA.recover(subscriptionHash, signature);
-    }
-
-    function isSubscriptionReady(
-        address from,
-        address toAddress,
-        address tokenAddress,
-        uint256 tokenAmount,
-        uint256 periodSeconds,
-        uint256 nonce,
-        bytes memory signature
-    )
-        external
-        view
-        returns (bool)
-    {
-        bytes32 subscriptionHash = getSubscriptionHash(
-            from, toAddress, tokenAddress, tokenAmount, periodSeconds, nonce
-        );
-        address signer = getSubscriptionSigner(subscriptionHash, signature);
-        uint256 allowance = ERC20(tokenAddress).allowance(from, address(this));
-        uint256 balance = ERC20(tokenAddress).balanceOf(from);
-
-        return (
-            signer == from &&
-            from != toAddress &&
-            isSubscriptionActive(subscriptionHash) &&
-            allowance >= tokenAmount &&
-            balance >= tokenAmount
-        );
     }
 
     function cancelSubscription(
@@ -123,15 +122,15 @@ contract Subscription is EIP712, Ownable {
         bytes memory signature
     )
         external
-        returns (bool success)
+        returns (bytes32 resHash)
     {
         bytes32 subscriptionHash = getSubscriptionHash(
             from, toAddress, tokenAddress, tokenAmount, periodSeconds, nonce
         );
-        address signer = getSubscriptionSigner(subscriptionHash, signature);
+        bytes32 cancelSubscriptionHash = getSubscriptionCancelHash(from, toAddress, tokenAddress, tokenAmount, periodSeconds, nonce, true);
+        address signer = getSubscriptionSigner(cancelSubscriptionHash, signature);
 
-        require(signer == from, "Invalid Signature for subscription cancellation");
-        require(from == msg.sender, 'msg.sender is not the subscriber');
+        require(signer == from || signer == toAddress, "Invalid Signature for subscription cancellation");
 
         nextValidTimestamp[subscriptionHash] = type(uint256).max;
 
@@ -139,7 +138,7 @@ contract Subscription is EIP712, Ownable {
             from, toAddress, tokenAddress, tokenAmount, periodSeconds, nonce
         );
 
-        return true;
+        return subscriptionHash;
     }
 
     function permit(
@@ -165,7 +164,7 @@ contract Subscription is EIP712, Ownable {
         bytes memory signature
     )
         public
-        returns (bool success)
+        returns (bytes32 resHash)
     {
         bytes32 subscriptionHash = getSubscriptionHash(
             from, toAddress, tokenAddress, tokenAmount, periodSeconds, nonce
@@ -181,16 +180,18 @@ contract Subscription is EIP712, Ownable {
         require(balance >= tokenAmount, 'Insufficient balance to execute subscription');
 
         ERC20(tokenAddress).transferFrom(from, address(this), tokenAmount);
-        uint256 reducedAmount = tokenAmount.mul(99).div(100);
+        uint256 reducedAmount = tokenAmount;
         ERC20(tokenAddress).transfer(toAddress, reducedAmount);
 
-        nextValidTimestamp[subscriptionHash] = block.timestamp.add(periodSeconds);
+        nextValidTimestamp[subscriptionHash] = nextValidTimestamp[subscriptionHash] > 0
+            ? nextValidTimestamp[subscriptionHash].add(periodSeconds) 
+            : block.timestamp.add(periodSeconds);
 
         emit ExecuteSubscription(
             from, toAddress, tokenAddress, tokenAmount, periodSeconds, nonce
         );
 
-        return true;
+        return subscriptionHash;
     }
 
     function transferRemainingBalance(
@@ -219,8 +220,8 @@ contract Subscription is EIP712, Ownable {
         bytes32 r,
         bytes32 s
     )
-        external
-        returns (bool success)
+    external
+        returns (bytes32 resHash)
     {
         permit(tokenAddress, from, value, deadline, v, r, s);
         return executeSubscription(

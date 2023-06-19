@@ -1,22 +1,22 @@
 // scripts/deploy.ts
 
-const { ethers, network } = require("hardhat");
+const { ethers, network, upgrades } = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 
 async function main() {
   const chainIdHex = await network.provider.send("eth_chainId");
   const chainId = parseInt(chainIdHex, 16);
-  const abiDir = path.join(__dirname, "../../test/blockchain/abi");
-  const addressDir = path.join(__dirname, "../../test/blockchain/addresses");
+  const abiDir = path.join(__dirname, "../blockchain/abi");
+  const addressDir = path.join(__dirname, "../blockchain/addresses");
   // We get the contract to deploy
   const TokenFactory = await ethers.getContractFactory("Token");
-  const token = await TokenFactory.deploy();
+  const token = await upgrades.deployProxy(TokenFactory);
   await token.deployed();
   console.log("Token deployed to:", token.address);
 
   const SubscriptionFactory = await ethers.getContractFactory("Subscription");
-  const subscription = await SubscriptionFactory.deploy();
+  const subscription = await upgrades.deployProxy(SubscriptionFactory);
   await subscription.deployed();
   console.log("Subscription deployed to:", subscription.address);
 
